@@ -31,16 +31,23 @@ jobs:
       - name: Install Render CLI
         run: |
           curl -fsSL https://render.com/static/rcli/install.sh | bash
-          echo "$HOME/.render" >> $GITHUB_PATH
+          echo "$HOME/.render/bin" >> $GITHUB_PATH
 
       - name: Log in to Render
+        env:
+          PATH: ${{ runner.path }}:$HOME/.render/bin
         run: render login --api-key ${{ secrets.RENDER_API_KEY }}
 
-      - name: Deploy to Render
+      - name: Create service on Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          PATH: ${{ runner.path }}:$HOME/.render/bin
         run: |
-          render services update ${{ secrets.RENDER_SERVICE_ID }} --image ${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
+          SERVICE_NAME=${{ secrets.RENDER_SERVICE_NAME }}
+          IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/test:latest
+
+          # Create a new service
+          render services create web --name "$SERVICE_NAME" --env docker --region oregon --plan starter --image "$IMAGE_NAME"
 
       - name: Notify deployment success
         run: echo "Deployment to Render successful!"
